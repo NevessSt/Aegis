@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String    // Hash for server-side auth (NOT the MasterKey)
+  wrappedSyncKey String?   // SyncKey encrypted with MasterKey
+  isPremium      Boolean   @default(false)
+  stripeCustId   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  blobs          EncryptedBlob[]
+}
+
+model EncryptedBlob {
+  id           String   @id
+  userId       String
+  iv           String   // Initialization Vector used for the blob
+  mac          String   // Message Authentication Code
+  ciphertext   String   // The actual encrypted data
+  lastModified DateTime @default(now()) @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
